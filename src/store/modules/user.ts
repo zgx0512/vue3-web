@@ -35,7 +35,7 @@ export const useUserStore = defineStore('userStore', () => {
       userInfo.value.avatar = result.data.avatar
       userInfo.value.name = result.data.name
       return 'ok'
-    } 
+    }
     return Promise.reject(new Error(''))
   }
   // 退出登录

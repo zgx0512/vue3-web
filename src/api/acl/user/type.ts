@@ -10,7 +10,7 @@ export interface userResponseData {
   createTime?: string
   updateTime?: string
   username: string
-  password: string
+  password?: string
   name: string
   phone?: string | null
   roleName?: string
@@ -36,17 +36,16 @@ export interface userListResponseData extends responseData {
 
 // 每一个角色的ts类型
 export type roleResponseData = {
-    id: number,
-    createTime: string,
-    updateTime: string,
-    roleName: string,
-    remark: null
+  id: number
+  createTime: string
+  updateTime: string
+  roleName: string
+  remark: null
 }
 // 获取角色列表的返回值ts类型
 export interface rolesListResponseData extends responseData {
-    data: {
-        assignRoles: roleResponseData[],
-        allRolesList: roleResponseData[]
-    }
+  data: {
+    assignRoles: roleResponseData[]
+    allRolesList: roleResponseData[]
+  }
 }
-

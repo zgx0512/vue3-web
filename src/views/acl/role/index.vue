@@ -7,6 +7,7 @@
           <el-input
             placeholder="请输入要搜索的角色名"
             v-model="roleName"
+            @keyup.enter="searchRole"
           ></el-input>
         </el-form-item>
         <el-form-item>
@@ -34,13 +35,18 @@
       >
         批量删除
       </el-button>
-      <el-table
-        border
-        style="width: 100%; margin: 10px 0"
+      <!-- 角色数据展示 -->
+      <BaseTable
         :data="rolesList"
+        :isShowCheckedBox="true"
+        :page="page"
+        :limit="limit"
+        :total="total"
+        :pageSizes="[3, 5, 10, 15]"
+        @page-change="handleCurrentChange"
+        @size-change="handleSizeChange"
         @selection-change="handleSelectionChange"
       >
-        <el-table-column type="selection" width="50" align="center" />
         <el-table-column
           type="index"
           label="#"
@@ -102,18 +108,7 @@
             </el-popconfirm>
           </template>
         </el-table-column>
-      </el-table>
-      <!-- 分页器 -->
-      <el-pagination
-        v-model:current-page="page"
-        v-model:page-size="limit"
-        :page-sizes="[3, 5, 10, 20]"
-        :background="true"
-        layout="prev, pager, next, jumper, ->, total, sizes"
-        :total="total"
-        @size-change="getRolesList(roleName)"
-        @current-change="getRolesList(roleName)"
-      />
+      </BaseTable>
     </el-card>
     <!-- 添加|修改角色对话框 -->
     <el-dialog
@@ -167,7 +162,6 @@ import {
   reqBatchRemove,
   reqRemove,
   reqMenuList,
-  menuListResponseData,
   reqAssignAcl,
 } from '@/api/acl/role'
 // 引入ts类型
@@ -175,6 +169,8 @@ import {
   rolesListResponseData,
   roleResponseData,
   permissionVoResponseData,
+  menuListResponseData,
+  menuResponseData,
 } from '@/api/acl/role/type'
 // 引入自定义的用户名校验规则
 import { validateRoleName } from '@/utils/validate'
@@ -186,7 +182,7 @@ let page = ref<number>(1)
 // 每页条数
 let limit = ref<number>(5)
 // 总数
-let total = ref<number>(10)
+let total = ref<number>(0)
 // 搜索的用户名
 let roleName = ref<string>('')
 // 角色表格列表
@@ -207,6 +203,16 @@ const getRolesList = async (roleName: string = '') => {
     rolesList.value = result.data.records
     total.value = result.data.total
   }
+}
+// 当前页发生变化时的回调
+const handleCurrentChange = (val: number) => {
+  page.value = val
+  getRolesList(roleName.value)
+}
+// 每页条数发生变化时的回调
+const handleSizeChange = (val: number) => {
+  limit.value = val
+  getRolesList(roleName.value)
 }
 // 根据角色名搜索角色
 const searchRole = () => {
@@ -252,7 +258,7 @@ const openAddOrUpdateDialogVisible = () => {
 // 确定添加|修改角色
 const submitRoleInfo = () => {
   if (!roleFormRef.value) return
-  roleFormRef.value.validate(async (valid) => {
+  roleFormRef.value.validate(async (valid: boolean) => {
     if (valid) {
       // 判断输入的角色名是否存在于角色列表中
       const bool = rolesList.value.some(
@@ -295,7 +301,7 @@ const submitRoleInfo = () => {
   })
 }
 // 编辑按钮的回调
-const updateRoleNameInfo = (row) => {
+const updateRoleNameInfo = (row: roleResponseData) => {
   // 打开对话框
   addOrUpdateDialogVisible.value = true
   roleForm.value = cloneDeep(row)
@@ -307,8 +313,8 @@ const updateRoleNameInfo = (row) => {
 // 批量删除存储的角色id列表
 const batchRemoveIdList = ref<number[]>([])
 // 多选框发生改变时的回调
-const handleSelectionChange = (row) => {
-  batchRemoveIdList.value = row.map((item) => item.id)
+const handleSelectionChange = (row: roleResponseData[]) => {
+  batchRemoveIdList.value = row.map((item) => item.id) as number[]
 }
 // 批量删除
 const batchRemove = () => {
@@ -320,7 +326,7 @@ const batchRemove = () => {
     .then(async () => {
       try {
         // 发送请求
-        await reqBatchRemove(batchRemoveIdList.value)
+        await reqBatchRemove(batchRemoveIdList.value as number[])
         // 成功的提示信息
         ElMessage({
           message: '删除成功',
@@ -355,7 +361,7 @@ const removeRole = async (id: number) => {
       type: 'success',
     })
     // 判断删除的是否是当前页的最后一项
-    if (rolesList.length <= 1 && page.value !== 1) {
+    if (rolesList.value.length <= 1 && page.value !== 1) {
       page.value -= page.value
     }
     // 重新获取表格数据
@@ -371,7 +377,7 @@ const removeRole = async (id: number) => {
 // 控制抽屉显示与隐藏
 const drawer = ref<boolean>(false)
 // 树形控件展示的数据
-const menuOrBtnList = ref<menuListResponseData[]>([])
+const menuOrBtnList = ref<menuResponseData[]>([])
 // 默认选中的数组
 const defaultCheckedKeys = ref<number[]>([])
 // 合并要发送给后端的数据
@@ -380,7 +386,7 @@ const permissionVo = ref<permissionVoResponseData>({
   roleId: '',
 })
 // 分配权限的回调
-const openDrawer = async (id) => {
+const openDrawer = async (id: number) => {
   // 打开抽屉
   drawer.value = true
   // 存储角色id
@@ -388,6 +394,7 @@ const openDrawer = async (id) => {
   const result: menuListResponseData = await reqMenuList(id)
   if (result.code === 200) {
     menuOrBtnList.value = result.data
+    console.log(result.data)
     recur(result.data)
   }
 }
@@ -396,9 +403,9 @@ const defaultProps = {
   label: 'name',
 }
 // 递归函数
-const recur = (arr) => {
+const recur = (arr: menuResponseData[]) => {
   arr.forEach((item) => {
-    if (item.children.length > 0 && item.children) {
+    if (item.children && item.children.length > 0) {
       // 有孩子，不是叶子节点，继续递归
       recur(item.children)
     } else {

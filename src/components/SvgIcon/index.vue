@@ -1,5 +1,5 @@
 <template>
-  <svg :style="{width, height}">
+  <svg :style="{ width, height }">
     <!-- xlink:href: 执行用哪一个图标 -->
     <!-- fill：指定svg的颜色 -->
     <use :xlink:href="`${prefix}${name}`" fill="color"></use>
@@ -12,19 +12,18 @@ defineProps({
   name: String,
   width: {
     type: String,
-    default: '16px'
+    default: '16px',
   },
   height: {
     type: String,
-    default: '16px'
+    default: '16px',
   },
   color: {
     type: String,
-    default: ''
-  }
+    default: '',
+  },
 })
-let prefix = ref<String>('#icon-')
+let prefix = ref<string>('#icon-')
 </script>
 
-<style lang="scss" scoped>
-</style>
+<style lang="scss" scoped></style>

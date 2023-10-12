@@ -7,6 +7,9 @@ import pinia from './store'
 // 引入进度条插件
 import nprogress from 'nprogress'
 import 'nprogress/nprogress.css'
+import { ElNotification } from 'element-plus'
+// 引入欢迎语
+import getTime from '@/utils/getTime'
 nprogress.configure({
   showSpinner: false, // 关闭进度环 默认true
   easing: 'ease',
@@ -16,6 +19,14 @@ const userStore = useUserStore(pinia)
 // 解构出userInfo, getUserInfo
 const { userInfo, getUserInfo, logout } = userStore
 router.beforeEach(async (to: any, from: any, next: any) => {
+  if (from.name === 'login' && userStore.token) {
+    ElNotification({
+      title: `HI，${getTime}`,
+      message: '欢迎回来',
+      type: 'success',
+      duration: 3000,
+    })
+  }
   // 开启进度条
   nprogress.start()
   // 判断是否有token

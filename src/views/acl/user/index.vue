@@ -7,6 +7,7 @@
           <el-input
             placeholder="请输入搜索用户名字"
             v-model="username"
+            @keyup.enter="searchUserInfo"
           ></el-input>
         </el-form-item>
         <el-form-item>
@@ -30,21 +31,21 @@
       >
         批量删除
       </el-button>
-      <!-- 数据表格 -->
-      <el-table
-        style="width: 100%; margin: 10px 0"
-        ref="userListRef"
-        border
+      <!-- 数据展示 -->
+      <BaseTable
         :data="userList"
-        @selection-change="handleSelectionChange"
+        ref="userListRef"
+        :isShowCheckedBox="true"
+        :reserveSelection="true"
         :row-key="handleRowKey"
+        :page="page"
+        :limit="limit"
+        :total="total"
+        :pageSizes="[3, 5, 10, 20]"
+        @page-change="handleCurrentChange"
+        @size-change="handleSizeChange"
+        @selection-change="handleSelectionChange"
       >
-        <el-table-column
-          type="selection"
-          width="50"
-          align="center"
-          :reserve-selection="true"
-        />
         <el-table-column
           label="#"
           width="50"
@@ -57,7 +58,7 @@
         <el-table-column property="roleName" label="用户角色" width="100" />
         <el-table-column property="createTime" label="创建时间" width="100" />
         <el-table-column property="updateTime" label="更新时间" width="100" />
-        <el-table-column label="操作" align="center">
+        <el-table-column label="操作" align="center" min-width="270">
           <template #default="{ row }">
             <el-button
               type="warning"
@@ -88,18 +89,7 @@
             </el-popconfirm>
           </template>
         </el-table-column>
-      </el-table>
-      <!-- 分页器 -->
-      <el-pagination
-        v-model:current-page="page"
-        v-model:page-size="limit"
-        :page-sizes="[3, 5, 10, 20]"
-        :background="true"
-        layout="prev, pager, next, jumper, ->, sizes, total"
-        :total="total"
-        @size-change="handleSizeChange"
-        @current-change="handleCurrentChange"
-      />
+      </BaseTable>
     </el-card>
     <!-- 添加/修改用户抽屉 -->
     <el-drawer
@@ -161,10 +151,10 @@
           >
             <el-checkbox
               v-for="role in allRolesList"
-              :key="role.id"
-              :label="role.id"
+              :key="(role as roleResponseData).id"
+              :label="(role as roleResponseData).id"
             >
-              {{ role.roleName }}
+              {{ (role as roleResponseData).roleName }}
             </el-checkbox>
           </el-checkbox-group>
         </el-form-item>
@@ -195,6 +185,7 @@ import {
   records,
   userListResponseData,
   userResponseData,
+  roleResponseData,
 } from '@/api/acl/user/type'
 // 引入自定义校验规则
 import { validatePassword } from '@/utils/validate'
@@ -248,11 +239,13 @@ const reset = () => {
   getUserList(username.value)
 }
 // 当前页发生改变时的回调
-const handleCurrentChange = () => {
+const handleCurrentChange = (val: number) => {
+  page.value = val
   getUserList(username.value)
 }
 // 每页条数发生变化时的回调
-const handleSizeChange = () => {
+const handleSizeChange = (val: number) => {
+  limit.value = val
   getUserList(username.value)
 }
 // 控制添加/修改用户抽屉的显示与隐藏
@@ -316,8 +309,8 @@ const submit = (formEl: any) => {
       // 关闭抽屉
       showAddOrUpdateDrawer.value = false
       if (userForm.value.id) {
-        console.log(page.value)
-        getUserList('')
+        // 修改成功, 重新获取表格数据
+        getUserList(username.value)
       } else {
         // 调用重置按钮的回调, 重新获取表格数据
         reset()
@@ -339,11 +332,10 @@ const updateUserInfo = (userInfo: userResponseData) => {
 // 复选框选出来的id列表
 let selectIdList = ref<number[]>([])
 // 复选框发生改变时的回调
-const handleSelectionChange = (selectList: any) => {
-  selectIdList.value = selectList.map((item) => item.id)
-  console.log(selectIdList.value)
+const handleSelectionChange = (selectList: userResponseData[]) => {
+  selectIdList.value = selectList.map((item) => item.id) as number[]
 }
-const handleRowKey = (row) => {
+const handleRowKey = (row: userResponseData) => {
   return row.id
 }
 // 用户表格对象
@@ -382,7 +374,7 @@ const open = () => {
     })
 }
 // 根据id删除用户
-const remove = async (id) => {
+const remove = async (id: number) => {
   try {
     await reqRemove(id)
     // 删除成功提示
@@ -427,18 +419,21 @@ const openAssignRolesDrawer = async (row: userResponseData) => {
   // 获取用户姓名
   assignRolesUsername.value = row.username
   // 将用户id保存起来
-  roleVo.value.userId = row.id
+  roleVo.value.userId = row.id as number
   // 发送获取角色列表数据的请求
-  const result = await reqRolesList(row.id)
+  const result = await reqRolesList(row.id as number)
   if (result.code === 200) {
     allRolesList.value = result.data.allRolesList
-    assignRoles.value = result.data.assignRoles.map((item) => item.id)
-    console.log(assignRoles.value)
+    assignRoles.value = result.data.assignRoles.map(
+      (item: roleResponseData) => item.id,
+    )
   }
 }
 // 点击全选按钮的回调
 const handleCheckAllChange = (val: boolean) => {
-  assignRoles.value = val ? allRolesList.value.map((item) => item.id) : []
+  assignRoles.value = val
+    ? allRolesList.value.map((item: roleResponseData) => item.id)
+    : []
   isIndeterminate.value = false
 }
 // 点击多选框子选项按钮的回调
@@ -475,10 +470,10 @@ const submitSelectRoles = async () => {
 }
 // 取消分配角色
 const cancelAssign = () => {
-    // 关闭抽屉
-    assignRolesDrawer.value = false
-    // 将数据复原
-    assignRoles.value = []
+  // 关闭抽屉
+  assignRolesDrawer.value = false
+  // 将数据复原
+  assignRoles.value = []
 }
 </script>
 
