@@ -3,6 +3,7 @@
     <!-- 表格 -->
     <div class="table-content">
       <el-table
+        v-loading="props.loading"
         border
         :max-height="maxHeight"
         ref="tableRef"
@@ -63,6 +64,7 @@ const props = withDefaults(
     small?: boolean
     total: number
     reserveSelection?: boolean
+    loading?: boolean
   }>(),
   {
     isShowCheckedBox: false,
@@ -75,6 +77,7 @@ const props = withDefaults(
     // 是否使用小型分页样式
     small: false,
     reserveSelection: false,
+    loading: false,
   },
 )
 const emits = defineEmits(['page-change', 'size-change', 'selection-change'])
