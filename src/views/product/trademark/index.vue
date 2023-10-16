@@ -2,7 +2,7 @@
  * @Author: zgx 2324461523@qq.com
  * @Date: 2023-10-09 14:38:17
  * @LastEditors: zgx 2324461523@qq.com
- * @LastEditTime: 2023-10-12 19:02:26
+ * @LastEditTime: 2023-10-16 19:39:24
  * @FilePath: \vue3-web\src\views\product\trademark\index.vue
  * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
 -->
@@ -39,19 +39,28 @@
       </el-table-column>
       <!-- 操作 -->
       <el-table-column label="操作">
-        <template #default="{}">
+        <template #default="{ row }">
           <el-button
             type="primary"
             size="small"
             icon="Edit"
             title="修改品牌"
+            @click="updateTrademark(row)"
           ></el-button>
-          <el-button
-            type="danger"
-            size="small"
-            icon="Delete"
-            title="删除品牌"
-          ></el-button>
+          <el-popconfirm
+            :title="`确定删除${row.tmName}?`"
+            width="150"
+            @confirm="deleteTrademark(row)"
+          >
+            <template #reference>
+              <el-button
+                type="danger"
+                size="small"
+                icon="Delete"
+                title="删除品牌"
+              ></el-button>
+            </template>
+          </el-popconfirm>
         </template>
       </el-table-column>
     </baseTable>
@@ -100,7 +109,11 @@
 
 <script lang="ts" setup>
 // 引入接口函数
-import { reqTrademarkList } from '@/api/product/trademark'
+import {
+  reqTrademarkList,
+  reqAddOrUpdateTrademark,
+  reqRemoveTrademark,
+} from '@/api/product/trademark'
 // 引入ts类型
 import {
   trademarkResponseData,
@@ -110,7 +123,9 @@ import {
 import { ref, onMounted, reactive, nextTick } from 'vue'
 import { ElMessage } from 'element-plus'
 // 引入自定义校验规则
-import { validatetmName } from '@/utils/validate'
+import { validatetmName, validateUploadImage } from '@/utils/validate'
+// 引入lodash的深拷贝
+import cloneDeep from 'lodash/cloneDeep'
 // 品牌数据列表
 let trademarkList = ref<trademarkResponseData[]>([])
 // 当前页
@@ -168,13 +183,17 @@ const addTrademark = () => {
       logoUrl: '',
     }
     // 重置表单校验规则
-    trademarkFormRef.value.clearValidate()
+    if (trademarkFormRef.value) {
+      trademarkFormRef.value.clearValidate()
+    }
     // 清空图片
     imageUrl.value = ''
   })
   // 显示对话框
   addOrUpdateTrademarkDialogVisible.value = true
 }
+// 图片上传成功与否的判断
+const isUpload = ref<boolean>(false)
 // 上传的图片
 const imageUrl = ref('')
 // 上传图片成功的回调
@@ -182,10 +201,16 @@ const handleAvatarSuccess = (res: any) => {
   if (res.code === 200) {
     // 图片上传成功
     imageUrl.value = res.data
+    isUpload.value = true
+    // 手动调用一次表单的校验
+    if (trademarkFormRef.value) {
+      trademarkFormRef.value.validateField('logoUrl')
+    }
   }
 }
 // 上传图片之前的回调
 const beforeAvatarUpload = (file: any) => {
+  isUpload.value = false
   // 给上传的图片设置限制
   if (
     file.type !== 'image/jpeg' &&
@@ -213,18 +238,101 @@ const rules = reactive({
       trigger: 'blur',
     },
     {
-      validator: validatetmName,
+      validator: (e1: any, e2: any, e3: any) =>
+        validatetmName(e1, e2, e3, originalTmName.value as string),
       trigger: 'blur',
     },
   ],
   logoUrl: {
     required: true,
-    message: '品牌LOGO不能为空',
-    trigger: 'blur',
+    validator: (e1: any, e2: any, e3: any) =>
+      validateUploadImage(e1, e2, e3, isUpload.value),
   },
 })
 // 确认添加|修改品牌
-const assign = () => {}
+const assign = () => {
+  if (!trademarkFormRef.value) return
+  trademarkFormRef.value.validate(async (valid: boolean) => {
+    if (valid) {
+      // 表单校验通过
+      addOrUpdateTrademarkForm.value.logoUrl = imageUrl.value
+      try {
+        // 发送请求
+        await reqAddOrUpdateTrademark(
+          addOrUpdateTrademarkForm.value as trademarkResponseData,
+        )
+        // 成功的提示信息
+        ElMessage({
+          type: 'success',
+          message: addOrUpdateTrademarkForm.value.id ? '修改成功' : '添加成功',
+        })
+        if (!addOrUpdateTrademarkForm.value.id) {
+          // 重置页码
+          page.value = 1
+        }
+        // 关闭对话框
+        addOrUpdateTrademarkDialogVisible.value = false
+        // 重新获取品牌数据列表
+        getTrademarkList()
+      } catch (error) {
+        // 失败的提示信息
+        ElMessage({
+          type: 'error',
+          message: addOrUpdateTrademarkForm.value.id ? '修改失败' : '添加失败',
+        })
+      }
+    }
+  })
+}
+// 获取一开始的要修改的品牌的原始名称
+const originalTmName = ref<string>('')
+// 编辑按钮的回调
+const updateTrademark = (row: trademarkResponseData) => {
+  addOrUpdateTrademarkForm.value = cloneDeep(row)
+  nextTick(() => {
+    // 重置表单校验规则
+    if (trademarkFormRef.value) {
+      trademarkFormRef.value.clearValidate()
+    }
+  })
+  // 打开对话框
+  addOrUpdateTrademarkDialogVisible.value = true
+  // 将图片的上传状态设置为true
+  isUpload.value = true
+  // 手动调用一次表单的校验
+  if (trademarkFormRef.value) {
+    trademarkFormRef.value.validateField('logoUrl')
+  }
+  // 将图片的地址赋值给imageUrl
+  imageUrl.value = row.logoUrl as string
+  // 将要修改的品牌的原始名称赋值给originalTmName
+  originalTmName.value = row.tmName as string
+}
+// 删除气泡框确定按钮的回调
+const deleteTrademark = async (row: trademarkResponseData) => {
+  try {
+    // 发送请求
+    await reqRemoveTrademark(row.id as number)
+    // 成功的提示信息
+    ElMessage({
+      type: 'success',
+      message: '删除成功',
+    })
+    // 判断删除的是否是当前页的最后一项
+    if (trademarkList.value.length <= 1 && page.value > 1) {
+      // 页码往前走一位
+      page.value = page.value - 1
+    }
+    // 重新获取品牌数据列表
+    getTrademarkList()
+  } catch (error) {
+    // 失败的提示信息
+    ElMessage({
+      type: 'error',
+      message: '删除失败',
+    })
+  }
+}
 </script>
 
 <style scoped>

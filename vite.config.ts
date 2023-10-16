@@ -6,23 +6,25 @@ import { createSvgIconsPlugin } from 'vite-plugin-svg-icons'
 import { viteMockServe } from 'vite-plugin-mock'
 export default defineConfig(({ command }) => {
   return {
-    plugins: [vue(),
-    createSvgIconsPlugin({
-      // 指定要缓存的图标文件夹
-      iconDirs: [path.resolve(process.cwd(), 'src/assets/icons')],
-      // 指定symbolId格式
-      symbolId: 'icon-[dir]-[name]',
-    }),
-    viteMockServe({
-      // supportTs: false,
-      // logger: false,
-      // mockPath: "mock/user",
-      localEnabled: command === 'serve',   // 保证在开发阶段可以使用mock接口
-    })],
+    plugins: [
+      vue(),
+      createSvgIconsPlugin({
+        // 指定要缓存的图标文件夹
+        iconDirs: [path.resolve(process.cwd(), 'src/assets/icons')],
+        // 指定symbolId格式
+        symbolId: 'icon-[dir]-[name]',
+      }),
+      viteMockServe({
+        // supportTs: false,
+        // logger: false,
+        // mockPath: "mock/user",
+        localEnabled: command === 'serve', // 保证在开发阶段可以使用mock接口
+      }),
+    ],
     resolve: {
       alias: {
-        '@': path.resolve("./src")  // 相对路径别名配置，使用@代替src
-      }
+        '@': path.resolve('./src'), // 相对路径别名配置，使用@代替src
+      },
     },
     css: {
       preprocessorOptions: {
@@ -36,11 +38,11 @@ export default defineConfig(({ command }) => {
     server: {
       proxy: {
         '/api': {
-          target: 'http://sph-api.atguigu.cn',   // 跨域请求的地址
-          changeOrigin: true,    // 开启跨域
-          rewrite: (path) => path.replace(/^\/api/, ''),   // 去除前缀
-        }
-      }
-    }
+          target: 'http://sph-api.atguigu.cn', // 跨域请求的地址
+          changeOrigin: true, // 开启跨域
+          rewrite: (path) => path.replace(/^\/api/, ''), // 去除前缀
+        },
+      },
+    },
   }
 })
