@@ -3,10 +3,11 @@
 // 引入全局组件
 import SvgIcon from './SvgIcon/index.vue'
 import BaseTable from './BaseTable/index.vue'
+import Category from './Category/index.vue'
 // 引入element的所有图标，进行全局注册
 import * as ElementPlusIconsVue from '@element-plus/icons-vue'
 // 将所有全局组件组合成一个对象
-const gloalComponent: any = { SvgIcon, BaseTable }
+const gloalComponent: any = { SvgIcon, BaseTable, Category }
 export default {
   install(app: any) {
     // 遍历
