@@ -2,7 +2,7 @@
  * @Author: zgx 2324461523@qq.com
  * @Date: 2023-10-09 14:38:17
  * @LastEditors: zgx 2324461523@qq.com
- * @LastEditTime: 2023-11-09 19:50:54
+ * @LastEditTime: 2023-11-10 14:40:39
  * @FilePath: \vue3-web\src\views\product\attr\index.vue
  * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
 -->
@@ -10,9 +10,11 @@
   <!-- 商品分类 -->
   <Category></Category>
   <!-- 数据展示卡片 -->
-  <el-card>
+  <el-card v-if="showData">
     <!-- 按钮 -->
-    <el-button type="primary" icon="Plus">添加属性</el-button>
+    <el-button type="primary" icon="Plus" @click="showData = false">
+      添加属性
+    </el-button>
     <!-- 表格 -->
     <el-table
       :data="attrStore.attrInfoList"
@@ -34,9 +36,26 @@
           </el-tag>
         </template>
       </el-table-column>
-      <el-table-column label="操作"></el-table-column>
+      <el-table-column label="操作">
+        <template #default="{}">
+          <el-button
+            type="primary"
+            size="small"
+            icon="Edit"
+            title="编辑"
+          ></el-button>
+          <el-button
+            type="danger"
+            size="small"
+            icon="Delete"
+            title="删除"
+          ></el-button>
+        </template>
+      </el-table-column>
     </el-table>
   </el-card>
+  <!-- 添加|修改属性卡片 -->
+  <addOrUpdate v-else></addOrUpdate>
 </template>
 
 <script lang="ts" setup>
@@ -44,12 +63,15 @@
 import { ref, watch } from 'vue'
 // 引入仓库
 import { useAttrStore } from '@/store/modules/product/attr'
+import addOrUpdate from './addOrUpdate.vue'
 // 创建仓库对象
 const attrStore = useAttrStore()
 // 加载效果
 const loading = ref<boolean>(false)
 // tag标签的类型
 const tagType = ['', 'success', 'danger']
+// 控制切換添加|修改属性卡片
+const showData = ref<boolean>(true)
 // 监听三级分类的变化
 watch(
   () => attrStore.category3Id,
