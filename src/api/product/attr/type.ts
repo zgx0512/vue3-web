@@ -32,17 +32,18 @@ export interface attrValueResponseDataItem {
   createTime?: string
   id?: number
   updtaeTime?: string
-  valueName?: string
+  valueName: string
+  isEdit?: boolean
 }
 // 定义每个商品基础属性的ts类型
 export interface attrInfoResponseDataItem {
   id?: number
   createTime?: string
   updtaeTime?: string
-  attrName?: string
+  attrName: string
   categoryId?: number
   categoryLevel?: number
-  attrValueList?: attrValueResponseDataItem[]
+  attrValueList: attrValueResponseDataItem[]
 }
 
 // 定义商品基础属性返回值的ts类型

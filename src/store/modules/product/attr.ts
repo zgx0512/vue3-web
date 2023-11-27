@@ -1,3 +1,11 @@
+/*
+ * @Author: zgx 2324461523@qq.com
+ * @Date: 2023-10-18 15:29:40
+ * @LastEditors: zgx 2324461523@qq.com
+ * @LastEditTime: 2023-11-21 15:31:23
+ * @FilePath: \vue3-web\src\store\modules\product\attr.ts
+ * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
+ */
 // 属性管理的仓库
 import { defineStore } from 'pinia'
 // 引入组合式API
@@ -8,6 +16,7 @@ import {
   reqCategory2List,
   reqCategory3List,
   reqAttrInfoList,
+  reqAddOrUpdateAttrInfo,
 } from '@/api/product/attr'
 // 引入ts类型
 import {
@@ -18,12 +27,6 @@ import {
 } from '@/api/product/attr/type'
 
 export const useAttrStore = defineStore('attrStore', () => {
-  // 选择的一级分类id
-  const category1Id = ref<number | string>('')
-  // 选择的二级分类id
-  const category2Id = ref<number | string>('')
-  // 选择的三级分类id
-  const category3Id = ref<number | string>('')
   // 定义一级分类商品列表
   const category1List = ref<categoryResponseData[]>([])
   // 获取一级分类商品列表的函数
@@ -57,24 +60,33 @@ export const useAttrStore = defineStore('attrStore', () => {
   // 定义商品基础属性列表
   const attrInfoList = ref<attrInfoResponseDataItem[]>([])
   // 获取商品基础属性列表的函数
-  const getAttrInfoList = async () => {
+  const getAttrInfoList = async (
+    category1Id: string | number,
+    category2Id: string | number,
+    category3Id: string | number,
+  ) => {
     // 发送请求
     const result: attrInfoResponseData = await reqAttrInfoList(
-      category1Id.value,
-      category2Id.value,
-      category3Id.value,
+      category1Id,
+      category2Id,
+      category3Id,
     )
-    console.log(result)
     if (result.code === 200) {
       attrInfoList.value = result.data
       return 'ok'
     }
     return Promise.reject(new Error('获取商品基础属性列表失败'))
   }
+  // 定义新增或者修改商品基础属性的函数
+  const addOrUpdateAttrInfo = async (attr: attrInfoResponseDataItem) => {
+    // 发送请求
+    const result: any = await reqAddOrUpdateAttrInfo(attr)
+    if (result.code === 200) {
+      return 'ok'
+    }
+    return Promise.reject(new Error('新增或者修改商品基础属性失败'))
+  }
   return {
-    category1Id,
-    category2Id,
-    category3Id,
     category1List,
     getCategory1List,
     category2List,
@@ -83,5 +95,6 @@ export const useAttrStore = defineStore('attrStore', () => {
     getCategory3List,
     attrInfoList,
     getAttrInfoList,
+    addOrUpdateAttrInfo,
   }
 })

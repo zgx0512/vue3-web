@@ -1,8 +1,16 @@
+/*
+ * @Author: zgx 2324461523@qq.com
+ * @Date: 2023-10-09 14:38:17
+ * @LastEditors: zgx 2324461523@qq.com
+ * @LastEditTime: 2023-11-20 19:01:22
+ * @FilePath: \vue3-web\src\main.ts
+ * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
+ */
 import { createApp } from 'vue'
 import App from './App.vue'
 import ElementPlus from 'element-plus'
 import 'element-plus/dist/index.css'
-//@ts-ignore忽略当前文件ts类型的检测否则有红色提示(打包会失败)
+// @ts-ignore忽略当前文件ts类型的检测否则有红色提示(打包会失败)
 import zhCn from 'element-plus/dist/locale/zh-cn.mjs'
 // 导入svg
 import 'virtual:svg-icons-register'
