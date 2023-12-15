@@ -88,6 +88,10 @@ const attrInfo = ref<attrInfoResponseDataItem>({
 const attrValueTableRef = ref()
 // 属性值输入框对象
 const attrValueInputRef = ref()
+const open = (row: attrInfoResponseDataItem) => {
+  attrInfo.value = row
+  console.log(attrInfo.value)
+}
 // 添加属性值按钮回调
 const addAttrValue = () => {
   attrInfo.value?.attrValueList.push({
@@ -103,10 +107,20 @@ const addAttrValue = () => {
 const changeInput = (row: attrValueResponseDataItem) => {
   if (row.valueName.trim().length === 0) {
     // 文本框没输入值，提示用户
-    ElMessage.warning('请输入属性值名称')
+    ElMessage.warning('请输入属性值名称!')
     return
   }
-  // 文本框有值，修改isEdit的值
+  // 获取不包含当前文本框的属性值数组
+  const arr = attrInfo.value.attrValueList.filter(
+    (item) => item.valueName !== row.valueName,
+  )
+  // 判断当前值是否已经存在
+  if (arr.length !== attrInfo.value.attrValueList.length - 1) {
+    // 当前值已经存在，提示用户
+    ElMessage.warning('当前属性值已经存在!')
+    return
+  }
+  // 修改isEdit的值
   row.isEdit = false
 }
 // 点击文本框的回调
@@ -127,26 +141,34 @@ const removeAttrValueName = (index: number) => {
 const cancel = () => {
   // 清空数据
   attrInfo.value.attrName = ''
-
   emits('cancel')
 }
 // 保存按钮的回调
 const save = async () => {
+  // 判断属性值数组是否有为编辑状态的属性值
+  const isEdit = attrInfo.value.attrValueList.some((item) => item.isEdit)
+  if (isEdit) {
+    // 有为编辑状态的属性值，提示用户
+    ElMessage.warning('属性值不能为空且不能重复!')
+    return
+  }
   // 去除attrValueList是否编辑的属性
   attrInfo.value.attrValueList.forEach((item) => {
     delete item.isEdit
   })
   // 整合数据
   const params = {
+    id: attrInfo.value.id,
     attrName: attrInfo.value.attrName,
     attrValueList: attrInfo.value.attrValueList,
     categoryId: props.category3Id,
+    categoryLevel: 3,
   }
   try {
     // 调用仓库的接口函数
     await attrStore.addOrUpdateAttrInfo(params)
     // 新增成功，提示用户
-    ElMessage.success('新增成功')
+    ElMessage.success('保存成功')
     // 清空数据
     attrInfo.value.attrName = ''
     attrInfo.value.attrValueList = []
@@ -156,6 +178,10 @@ const save = async () => {
     console.log(error)
   }
 }
+// 将open函数暴露出去
+defineExpose({
+  open,
+})
 </script>
 
 <style scoped></style>

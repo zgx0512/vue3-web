@@ -19,6 +19,7 @@ enum API {
   CATEGORY3_URL = '/admin/product/getCategory3/',
   ATTRINFOLIST_URL = '/admin/product/attrInfoList/',
   ADDORUPDATEATTRINFO_URL = '/admin/product/saveAttrInfo',
+  REMOVEATTRINFO_URL = '/admin/product/deleteAttr/',
 }
 
 // 获取一级分类商品列表
@@ -54,4 +55,9 @@ export const reqAttrInfoList = (
 // 添加或者修改商品基础属性
 export const reqAddOrUpdateAttrInfo = (attr: attrInfoResponseDataItem) => {
   return request.post<any, any>(API.ADDORUPDATEATTRINFO_URL, attr)
+}
+
+// 删除商品基础属性
+export const reqRemoveAttrInfo = (attrId: string | number) => {
+  return request.delete<any, any>(API.REMOVEATTRINFO_URL + attrId)
 }

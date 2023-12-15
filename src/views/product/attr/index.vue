@@ -2,7 +2,7 @@
  * @Author: zgx 2324461523@qq.com
  * @Date: 2023-10-09 14:38:17
  * @LastEditors: zgx 2324461523@qq.com
- * @LastEditTime: 2023-11-27 19:33:04
+ * @LastEditTime: 2023-12-15 09:54:56
  * @FilePath: \vue3-web\src\views\product\attr\index.vue
  * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
 -->
@@ -19,7 +19,7 @@
       type="primary"
       icon="Plus"
       :disabled="addAttrBtnDisabled"
-      @click="showData = false"
+      @click="openAddorUpdate"
     >
       添加属性
     </el-button>
@@ -45,19 +45,27 @@
         </template>
       </el-table-column>
       <el-table-column label="操作">
-        <template #default="{}">
+        <template #default="{ row }">
           <el-button
             type="primary"
             size="small"
             icon="Edit"
             title="编辑"
+            @click="openAddorUpdate(JSON.parse(JSON.stringify(row)))"
           ></el-button>
-          <el-button
-            type="danger"
-            size="small"
-            icon="Delete"
-            title="删除"
-          ></el-button>
+          <el-popconfirm
+            :title="`确定删除${row.attrName}?`"
+            @confirm="removeAttr(row.id)"
+          >
+            <template #reference>
+              <el-button
+                type="danger"
+                size="small"
+                icon="Delete"
+                title="删除"
+              ></el-button>
+            </template>
+          </el-popconfirm>
         </template>
       </el-table-column>
     </el-table>
@@ -66,6 +74,7 @@
   <addOrUpdate
     v-else
     @cancel="cancel"
+    ref="addOrUpdateRef"
     :category3Id="category3Id"
     @loadAttrList="loadAttrList"
   ></addOrUpdate>
@@ -73,10 +82,13 @@
 
 <script lang="ts" setup>
 // 引入组合式api
-import { ref } from 'vue'
+import { nextTick, ref } from 'vue'
 // 引入仓库
 import { useAttrStore } from '@/store/modules/product/attr'
 import addOrUpdate from './addOrUpdate.vue'
+// 引入ts类型
+import type { attrInfoResponseDataItem } from '@/api/product/attr/type'
+import { ElMessage } from 'element-plus'
 // 创建仓库对象
 const attrStore = useAttrStore()
 // 加载效果
@@ -86,7 +98,7 @@ const tagType = ['', 'success', 'danger']
 // 控制切換添加|修改属性卡片
 const showData = ref<boolean>(true)
 // 添加属性按钮能否点击
-const addAttrBtnDisabled = ref<boolean>(false)
+const addAttrBtnDisabled = ref<boolean>(true)
 // 一级分类id
 const category1Id = ref<number | string>('')
 // 二级分类id
@@ -99,6 +111,8 @@ interface categoryId {
   category2Id: number | string
   category3Id: number | string
 }
+// 添加|修改属性卡片的ref
+const addOrUpdateRef = ref<typeof addOrUpdate>()
 // 获取分类id列表，发起获取属性列表的请求
 const getCategoryIdList = async (params: categoryId) => {
   if (params.category3Id) {
@@ -136,6 +150,19 @@ const getAttrInfoList = async (params: categoryId) => {
     loading.value = false
   }
 }
+// 打开添加|修改属性卡片
+const openAddorUpdate = (row: attrInfoResponseDataItem) => {
+  // 切换显示添加|修改属性卡片
+  showData.value = false
+  nextTick(() => {
+    // 判断是新增还是修改
+    if (row.attrName) {
+      // 修改
+      // 调用子组件的open函数
+      addOrUpdateRef.value?.open(row)
+    }
+  })
+}
 const loadAttrList = () => {
   // 切换显示属性列表卡片
   showData.value = true
@@ -150,6 +177,25 @@ const loadAttrList = () => {
 const cancel = () => {
   // 切换显示添加|修改属性卡片
   showData.value = true
+}
+// 删除属性的回调
+const removeAttr = async (id: number) => {
+  try {
+    // 调用仓库的接口函数
+    await attrStore.removeAttrInfo(id)
+    // 删除成功，提示用户
+    ElMessage.success('删除成功')
+    // 重新获取属性列表
+    getAttrInfoList({
+      category1Id: category1Id.value,
+      category2Id: category2Id.value,
+      category3Id: category3Id.value,
+    })
+  } catch (error) {
+    // 删除失败，提示用户
+    ElMessage.error('删除失败')
+    console.log(error)
+  }
 }
 </script>
 

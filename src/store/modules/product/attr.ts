@@ -17,6 +17,7 @@ import {
   reqCategory3List,
   reqAttrInfoList,
   reqAddOrUpdateAttrInfo,
+  reqRemoveAttrInfo,
 } from '@/api/product/attr'
 // 引入ts类型
 import {
@@ -86,6 +87,14 @@ export const useAttrStore = defineStore('attrStore', () => {
     }
     return Promise.reject(new Error('新增或者修改商品基础属性失败'))
   }
+  // 删除商品基础属性
+  const removeAttrInfo = async (attrId: string | number) => {
+    const result: any = await reqRemoveAttrInfo(attrId)
+    if (result.code === 200) {
+      return 'ok'
+    }
+    return Promise.reject(new Error('删除商品基础属性失败'))
+  }
   return {
     category1List,
     getCategory1List,
@@ -96,5 +105,6 @@ export const useAttrStore = defineStore('attrStore', () => {
     attrInfoList,
     getAttrInfoList,
     addOrUpdateAttrInfo,
+    removeAttrInfo,
   }
 })
